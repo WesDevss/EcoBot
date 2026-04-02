@@ -1,3 +1,4 @@
+#Eu estive aqui. Professor Rondineli Seba
 # EcoBot - Sistema de Gestão Sustentável
 
 O EcoBot é uma solução inovadora para gestão sustentável e ESG, ajudando empresas a monitorar e reduzir seu impacto ambiental através de métricas em tempo real, sugestões personalizadas e um assistente virtual.
