@@ -4,9 +4,12 @@ require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
 const app = require('./app');
 const { connectDatabase } = require('./config/db');
 const { port } = require('./config/env');
+const userRoutes = require('./routes/userRoutes');
 
 async function startServer() {
   await connectDatabase();
+
+  app.use('/api/users', userRoutes);
 
   app.listen(port, () => {
     console.log(`EcoBot API running on port ${port}`);
