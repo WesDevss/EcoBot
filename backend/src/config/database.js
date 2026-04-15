@@ -1,18 +1,4 @@
-const mongoose = require('mongoose');
-const { mongodbUri } = require('./env');
+// Mantido por compatibilidade: o código novo vive em `config/db.js`.
+const { connectDatabase } = require('./db');
 
-async function connectDatabase() {
-  if (!mongodbUri) {
-    return;
-  }
-
-  if (mongoose.connection.readyState === 1) {
-    return;
-  }
-
-  await mongoose.connect(mongodbUri);
-}
-
-module.exports = {
-  connectDatabase
-};
+module.exports = { connectDatabase };
