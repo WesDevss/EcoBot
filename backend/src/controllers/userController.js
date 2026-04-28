@@ -34,9 +34,14 @@ async function updateUser(req, res, next) {
       return res.status(400).json({ message: 'ID inválido' });
     }
 
+    const update = {};
+    if (typeof nome !== 'undefined') update.nome = nome;
+    if (typeof email !== 'undefined') update.email = email;
+    if (typeof senha !== 'undefined') update.senha = senha;
+
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { nome, email, senha },
+      { $set: update },
       { new: true, runValidators: true }
     ).select('-senha');
 
