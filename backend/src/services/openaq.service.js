@@ -266,5 +266,6 @@ function normalizeOpenAQData(measurements) {
 module.exports = {
   fetchAirQualityByLocation,
   fetchAirQualityByCity,
-  normalizeOpenAQData
+  normalizeOpenAQData,
+  getSimulatedData
 };
