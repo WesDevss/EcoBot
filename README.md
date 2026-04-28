@@ -52,6 +52,17 @@ Ferramentas previstas:
 - API em JSON
 - URL padrão local: `http://localhost:3001/api`
 
+### Integrações Externas
+
+- **OpenAQ API**
+  - Fonte de dados de qualidade do ar
+  - Versão: v3 (requer API key)
+  - Documentação: https://docs.openaq.org/
+  - Base da API: https://api.openaq.org/v3
+  - Poluentes monitorados: PM2.5, PM10, NO2, O3, CO, SO2, AQI
+  - Status: integração implementada com fallback para dados simulados
+  - Métricas ESG enriquecidas: CO2, energia, água, resíduos, energia renovável, taxa de reciclagem, pontuação de sustentabilidade
+
 ## Estrutura de Pastas
 
 ```text
@@ -62,21 +73,31 @@ EcoBot/
 │       │   ├── database.js
 │       │   └── env.js
 │       ├── controllers/
+│       │   ├── airQuality.controller.js
 │       │   ├── chat.controller.js
 │       │   ├── metrics.controller.js
-│       │   └── suggestions.controller.js
+│       │   ├── suggestions.controller.js
+│       │   └── userController.js
 │       ├── data/
 │       │   ├── metrics.data.js
 │       │   └── suggestions.data.js
 │       ├── middlewares/
+│       │   └── errorHandler.js
 │       ├── models/
+│       │   ├── AirQuality.js
+│       │   ├── Log.js
+│       │   ├── Metric.js
+│       │   └── User.js
 │       ├── routes/
+│       │   ├── airQuality.routes.js
 │       │   ├── chat.routes.js
 │       │   ├── index.js
 │       │   ├── metrics.routes.js
-│       │   └── suggestions.routes.js
+│       │   ├── suggestions.routes.js
+│       │   └── userRoutes.js
 │       ├── services/
-│       │   └── chatbot.service.js
+│       │   ├── chatbot.service.js
+│       │   └── openaq.service.js
 │       ├── utils/
 │       ├── app.js
 │       └── server.js
@@ -104,16 +125,29 @@ EcoBot/
 ## Status da Estrutura
 
 - O backend já foi reorganizado para uma separação mais clara entre configuração, rotas, controllers e services.
+- A conexão com MongoDB foi implementada com Mongoose (com opção de rodar sem conexão para desenvolvimento).
+- Schemas Mongoose foram criados (User, Metric, Log, AirQuality com métricas ESG).
+- CRUD de usuários foi implementado (controller + rotas).
+- Integração com OpenAQ v3 foi implementada para dados de qualidade do ar com fallback para dados simulados.
+- Dados simulados enriquecidos com métricas ESG completas (CO2, energia, água, resíduos, energia renovável, taxa de reciclagem, pontuação de sustentabilidade).
+- Integração real com OpenAQ v3 implementada usando endpoint /locations/{id}/latest.
+- Middleware global de tratamento de erros foi adicionado.
 - O frontend foi preparado com a estrutura de diretórios para o restante do time implementar.
 - A raiz do projeto foi ajustada para facilitar deploy na Vercel com `server.js` e `vercel.json`.
-- A conexão com MongoDB está preparada por ambiente através de `MONGODB_URI`.
 
 ## Endpoints Disponíveis Hoje
 
-- `GET /api/health`
-- `GET /api/metrics`
-- `GET /api/suggestions`
-- `POST /api/chat`
+- `GET /api/health` - health check da API
+- `GET /api/metrics` - métricas de sustentabilidade (mock)
+- `GET /api/suggestions` - sugestões de otimização ESG (mock)
+- `POST /api/chat` - chatbot para consultas ESG (mock)
+- `GET /api/air-quality/location/:location` - busca dados de qualidade do ar e métricas ESG por localização
+  - Retorna: qualidade do ar (PM2.5, PM10, NO2, O3, CO, SO2, AQI)
+  - Inclui: métricas ESG (CO2, energia, água, resíduos, energia renovável, taxa de reciclagem)
+  - Calcula: pontuação de sustentabilidade (0-100)
+- `GET /api/air-quality/city?city=X&country=Y` - busca dados de qualidade do ar e métricas ESG por cidade
+- `POST /api/air-quality` - salva dados de qualidade do ar e métricas ESG no MongoDB
+- `GET /api/air-quality/stored/:location` - busca dados de qualidade do ar armazenados no MongoDB
 
 ## Executando Localmente
 
@@ -199,5 +233,5 @@ Sugestão para manter commits limpos:
 Branch criada para esta organização:
 
 ```text
-chore/project-structure-vercel
+projeto-estrutura-vercel
 ```
