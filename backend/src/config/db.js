@@ -28,7 +28,8 @@ async function connectDatabase() {
   const mongoUri = getMongoUri();
 
   if (!mongoUri) {
-    throw new Error('MONGO_URI não foi definido no ambiente');
+    console.warn('[db] MONGO_URI não definido - rodando sem conexão com MongoDB');
+    return null;
   }
 
   attachConnectionLogs();
