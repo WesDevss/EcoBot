@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
 async function createUser(req, res, next) {
   try {
@@ -29,9 +30,18 @@ async function updateUser(req, res, next) {
     const { id } = req.params;
     const { nome, email, senha } = req.body;
 
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido' });
+    }
+
+    const update = {};
+    if (typeof nome !== 'undefined') update.nome = nome;
+    if (typeof email !== 'undefined') update.email = email;
+    if (typeof senha !== 'undefined') update.senha = senha;
+
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { nome, email, senha },
+      { $set: update },
       { new: true, runValidators: true }
     ).select('-senha');
 
@@ -48,6 +58,10 @@ async function updateUser(req, res, next) {
 async function deleteUser(req, res, next) {
   try {
     const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido' });
+    }
 
     const deletedUser = await User.findByIdAndDelete(id);
 
