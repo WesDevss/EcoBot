@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
-import { getChatResponse } from '../data/chatbot.data';
+import { sendChatMessage } from '../services/chatApi';
 import './chatbot.css';
 
 function Chatbot() {
@@ -10,7 +10,7 @@ function Chatbot() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -19,15 +19,22 @@ function Chatbot() {
     setInput('');
     setLoading(true);
 
-    setTimeout(() => {
-      const botResponse = getChatResponse(input);
+    try {
+      const { response } = await sendChatMessage(input);
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
-        text: botResponse,
+        text: response,
         sender: 'bot',
       }]);
+    } catch (requestError) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: requestError?.response?.data?.message || 'Não foi possível responder agora. Tente novamente.',
+        sender: 'bot',
+      }]);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

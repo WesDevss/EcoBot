@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import FilterBar from '../components/FilterBar';
 import ESGHistoricChart from '../components/charts/ESGHistoricChart';
 import ScoreTrendChart from '../components/charts/ScoreTrendChart';
-import { getDataForCityAndMonth } from '../data/unified.data';
+import { getDataForCityAndMonth } from '../services/unifiedApi';
 import './history.css';
 
 function History() {
@@ -12,24 +12,44 @@ function History() {
   const [filters, setFilters] = useState({ city: 'São Paulo' });
 
   useEffect(() => {
-    setLoading(true);
-    const result = getDataForCityAndMonth(filters.city);
-    const formattedData = result.map(d => ({
-      month: d.month,
-      co2: d.esgMetrics.co2Emissions,
-      energy: d.esgMetrics.energyConsumption,
-      water: d.esgMetrics.waterConsumption,
-      waste: d.esgMetrics.wasteGenerated,
-      renewable: d.esgMetrics.renewableEnergy,
-      recycling: d.esgMetrics.recyclingRate,
-      score: d.sustainabilityScore
-    }));
-    setHistoryData(formattedData);
-    setLoading(false);
+    let isMounted = true;
+
+    async function loadHistoryData() {
+      setLoading(true);
+      const result = await getDataForCityAndMonth(filters.city);
+      const formattedData = result.map(d => ({
+        month: d.month,
+        co2: d.esgMetrics.co2Emissions,
+        energy: d.esgMetrics.energyConsumption,
+        water: d.esgMetrics.waterConsumption,
+        waste: d.esgMetrics.wasteGenerated,
+        renewable: d.esgMetrics.renewableEnergy,
+        recycling: d.esgMetrics.recyclingRate,
+        score: d.sustainabilityScore
+      }));
+
+      if (!isMounted) {
+        return;
+      }
+
+      setHistoryData(formattedData);
+      setLoading(false);
+    }
+
+    loadHistoryData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [filters]);
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    setFilters((prev) => {
+      if (prev.city === newFilters.city) {
+        return prev;
+      }
+      return { city: newFilters.city };
+    });
   };
 
   if (loading) {

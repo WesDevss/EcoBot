@@ -1,30 +1,62 @@
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
 const OPENAQ_BASE_URL = 'https://api.openaq.org/v3';
 
-function getOpenAQApiKey() {
-  const envKey = process.env.OPENAQ_API_KEY;
-  if (envKey) return envKey;
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
 
-  try {
-    const envExamplePath = path.join(__dirname, '../../../.env.example');
-    const envExampleContent = fs.readFileSync(envExamplePath, 'utf-8');
-    const match = envExampleContent.match(/^OPENAQ_API_KEY=(.+)$/m);
-    if (match && match[1] && match[1] !== '') {
-      return match[1].trim();
+function getCountryCode(location) {
+  if (!location?.country) return '';
+  if (typeof location.country === 'string') return location.country;
+  return location.country.code || '';
+}
+
+function pickBestLocation(locations, query, country) {
+  const normalizedQuery = normalizeText(query);
+  const normalizedCountry = normalizeText(country);
+
+  const candidates = locations.filter((loc) => {
+    if (!normalizedCountry) {
+      return true;
     }
-  } catch (error) {
-    console.warn('[OpenAQ Service] Não foi possível ler .env.example');
-  }
+    return normalizeText(getCountryCode(loc)) === normalizedCountry;
+  });
 
+  const scopedLocations = candidates.length > 0 ? candidates : locations;
+
+  const ranked = scopedLocations
+    .map((loc) => {
+      const name = normalizeText(loc.name);
+      const locality = normalizeText(loc.locality);
+
+      let score = -1;
+      if (locality === normalizedQuery || name === normalizedQuery) score = 4;
+      else if (locality.startsWith(normalizedQuery) || name.startsWith(normalizedQuery)) score = 3;
+      else if (locality.includes(normalizedQuery) || name.includes(normalizedQuery)) score = 2;
+      else if ((locality.length >= 3 && normalizedQuery.includes(locality)) || (name.length >= 3 && normalizedQuery.includes(name))) score = 1;
+
+      return { loc, score };
+    })
+    .filter((item) => item.score >= 0)
+    .sort((a, b) => b.score - a.score);
+
+  return ranked.length ? ranked[0].loc : null;
+}
+
+function getOpenAQApiKey() {
+  if (process.env.OPENAQ_API_KEY) {
+    return process.env.OPENAQ_API_KEY.trim();
+  }
   return '';
 }
 
-const OPENAQ_API_KEY = getOpenAQApiKey();
-
 async function fetchAirQualityByLocation(location) {
+  const OPENAQ_API_KEY = getOpenAQApiKey();
   if (!OPENAQ_API_KEY) {
     console.warn('[OpenAQ Service] API key não definida - usando dados simulados');
     return getSimulatedData(location);
@@ -36,15 +68,12 @@ async function fetchAirQualityByLocation(location) {
     const locationsResponse = await axios.get(`${OPENAQ_BASE_URL}/locations`, {
       headers,
       params: {
-        limit: 100
+        limit: 1000
       }
     });
 
     const locations = locationsResponse.data.results || [];
-    const matchedLocation = locations.find(loc => 
-      loc.name.toLowerCase().includes(location.toLowerCase()) ||
-      loc.locality?.toLowerCase().includes(location.toLowerCase())
-    );
+    const matchedLocation = pickBestLocation(locations, location);
 
     if (!matchedLocation) {
       console.warn(`[OpenAQ Service] Localização "${location}" não encontrada - usando dados simulados`);
@@ -65,6 +94,7 @@ async function fetchAirQualityByLocation(location) {
 }
 
 async function fetchAirQualityByCity(city, country) {
+  const OPENAQ_API_KEY = getOpenAQApiKey();
   if (!OPENAQ_API_KEY) {
     console.warn('[OpenAQ Service] API key não definida - usando dados simulados');
     return getSimulatedData(city);
@@ -76,15 +106,13 @@ async function fetchAirQualityByCity(city, country) {
     const locationsResponse = await axios.get(`${OPENAQ_BASE_URL}/locations`, {
       headers,
       params: {
-        limit: 100
+        limit: 1000,
+        country: country || undefined
       }
     });
 
     const locations = locationsResponse.data.results || [];
-    const matchedLocation = locations.find(loc => 
-      loc.name.toLowerCase().includes(city.toLowerCase()) ||
-      loc.locality?.toLowerCase().includes(city.toLowerCase())
-    );
+    const matchedLocation = pickBestLocation(locations, city, country);
 
     if (!matchedLocation) {
       console.warn(`[OpenAQ Service] Cidade "${city}" não encontrada - usando dados simulados`);
@@ -120,12 +148,14 @@ function convertOpenAQToESG(openAQData, locationInfo) {
   };
 
   openAQData.forEach(data => {
-    if (data.value !== undefined) {
-      const sensorId = data.sensorsId;
-      if (sensorId === 2) measurements.pm25 = data.value;
-      else if (sensorId === 1) measurements.pm10 = data.value;
-      else measurements.pm25 = data.value;
-    }
+    if (data.value === undefined || data.value === null) return;
+    const param = (data.parameter || '').toLowerCase().replace('.', '');
+    if (param === 'pm25') measurements.pm25 = data.value;
+    else if (param === 'pm10') measurements.pm10 = data.value;
+    else if (param === 'no2') measurements.no2 = data.value;
+    else if (param === 'o3') measurements.o3 = data.value;
+    else if (param === 'co') measurements.co = data.value;
+    else if (param === 'so2') measurements.so2 = data.value;
   });
 
   measurements.aqi = Math.max(
@@ -137,18 +167,18 @@ function convertOpenAQToESG(openAQData, locationInfo) {
     measurements.so2 || 0
   ) || 50;
 
-  const co2Emissions = parseFloat((Math.random() * 1000 + 200).toFixed(2));
-  const energyConsumption = parseFloat((Math.random() * 5000 + 1000).toFixed(2));
-  const waterConsumption = parseFloat((Math.random() * 200 + 50).toFixed(2));
-  const wasteGenerated = parseFloat((Math.random() * 100 + 20).toFixed(2));
-  const renewableEnergy = parseFloat((Math.random() * 50 + 10).toFixed(2));
-  const recyclingRate = parseFloat((Math.random() * 40 + 20).toFixed(2));
+  const aqi = measurements.aqi;
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const co2Emissions = parseFloat(clamp((aqi * 14) + 180, 150, 1200).toFixed(1));
+  const energyConsumption = parseFloat(clamp((aqi * 42) + 1100, 900, 5200).toFixed(1));
+  const waterConsumption = parseFloat(clamp((aqi * 1.1) + 70, 50, 260).toFixed(1));
+  const wasteGenerated = parseFloat(clamp((aqi * 0.35) + 20, 15, 120).toFixed(1));
+  const renewableEnergy = parseFloat(clamp(60 - (aqi * 0.4), 8, 60).toFixed(1));
+  const recyclingRate = parseFloat(clamp(55 - (aqi * 0.28), 12, 55).toFixed(1));
 
-  const sustainabilityScore = parseFloat((
-    100 - (measurements.aqi / 2) +
-    (renewableEnergy * 0.5) +
-    (recyclingRate * 0.3) -
-    (co2Emissions / 100)
+  const sustainabilityScore = parseFloat(clamp(
+    100 - (aqi * 0.45) + (renewableEnergy * 0.35) + (recyclingRate * 0.25) - (co2Emissions * 0.015),
+    0, 100
   ).toFixed(1));
 
   return [

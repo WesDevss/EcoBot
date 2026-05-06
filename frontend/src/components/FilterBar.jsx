@@ -1,21 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { getCities, monthOrder } from '../data/unified.data';
+import { getCities, getMonths } from '../services/unifiedApi';
 import './FilterBar.css';
 
 function FilterBar({ onFilterChange, defaultCity = 'São Paulo', defaultMonth = 'Jun', showMonthFilter = true }) {
   const [cities, setCities] = useState([]);
+  const [months, setMonths] = useState([]);
   const [selectedCity, setSelectedCity] = useState(defaultCity);
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
 
   useEffect(() => {
-    setCities(getCities());
+    let isMounted = true;
+
+    async function loadFilterOptions() {
+      const [citiesData, monthsData] = await Promise.all([getCities(), getMonths()]);
+      if (!isMounted) {
+        return;
+      }
+
+      setCities(citiesData);
+      setMonths(monthsData);
+    }
+
+    loadFilterOptions();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
     if (onFilterChange) {
       onFilterChange({ city: selectedCity, month: showMonthFilter ? selectedMonth : null });
     }
-  }, [selectedCity, selectedMonth, onFilterChange, showMonthFilter]);
+  }, [selectedCity, selectedMonth, showMonthFilter]);
 
   return (
     <div className="filter-bar">
@@ -42,7 +59,7 @@ function FilterBar({ onFilterChange, defaultCity = 'São Paulo', defaultMonth = 
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
-            {monthOrder.map((month) => (
+            {months.map((month) => (
               <option key={month} value={month}>
                 {month}
               </option>

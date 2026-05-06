@@ -21,7 +21,7 @@ function SustainabilityScoreChart({ score = 0 }) {
   const isDark = theme === 'dark';
   const normalizedScore = Math.min(100, Math.max(0, score));
   const cx = 140;
-  const cy = 130;
+  const cy = 115;
   const radius = 100;
   const stroke = 18;
 
@@ -48,8 +48,8 @@ function SustainabilityScoreChart({ score = 0 }) {
   const ticks = [0, 25, 50, 75, 100];
 
   return (
-    <div style={{ width: '100%', maxWidth: 280, margin: '0 auto' }}>
-      <svg viewBox="0 0 280 170" style={{ width: '100%', height: 'auto', display: 'block' }}>
+    <div style={{ width: '100%', maxWidth: 320, margin: '0 auto' }}>
+      <svg viewBox="0 0 280 160" style={{ width: '100%', height: 'auto', display: 'block' }}>
         {/* Fundo cinza */}
         <path
           d={describeArc(cx, cy, radius, 180, 360)}
@@ -123,10 +123,10 @@ function SustainabilityScoreChart({ score = 0 }) {
       </svg>
 
       {/* Texto central abaixo do SVG */}
-      <div style={{ textAlign: 'center', marginTop: -10 }}>
+      <div style={{ textAlign: 'center', marginTop: 2 }}>
         <div
           style={{
-            fontSize: '36px',
+            fontSize: '40px',
             fontWeight: 800,
             color: getScoreColor(normalizedScore),
             lineHeight: 1,
@@ -136,15 +136,15 @@ function SustainabilityScoreChart({ score = 0 }) {
         </div>
         <div
           style={{
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 500,
             color: isDark ? '#9ca3af' : '#6b7280',
-            marginTop: 4,
+            marginTop: 6,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}
         >
-          Score de Sustentabilidade
+          Índice ESG Atual
         </div>
       </div>
     </div>

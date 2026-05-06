@@ -5,27 +5,59 @@ import ESGMetricsChart from '../components/charts/ESGMetricsChart';
 import AirQualityChart from '../components/charts/AirQualityChart';
 import SustainabilityScoreChart from '../components/charts/SustainabilityScoreChart';
 import ComparisonChart from '../components/charts/ComparisonChart';
-import { getDataForCityAndMonth, getMetricsForCity } from '../data/unified.data';
-import { suggestions } from '../data/suggestions.data';
+import { getDataForCityAndMonth, getMetricsForCity } from '../services/unifiedApi';
+import { getSuggestions } from '../services/suggestionsApi';
 import './dashboard.css';
 
 function Dashboard() {
   const [airData, setAirData] = useState(null);
   const [metricsData, setMetricsData] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ city: 'São Paulo', month: 'Jun' });
 
   useEffect(() => {
-    setLoading(true);
-    const data = getDataForCityAndMonth(filters.city, filters.month);
-    const metrics = getMetricsForCity(filters.city);
-    setAirData(data);
-    setMetricsData(metrics);
-    setLoading(false);
+    let isMounted = true;
+
+    async function loadDashboardData() {
+      setLoading(true);
+      try {
+        const [data, metrics, apiSuggestions] = await Promise.all([
+          getDataForCityAndMonth(filters.city, filters.month),
+          getMetricsForCity(filters.city),
+          getSuggestions()
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setAirData(data);
+        setMetricsData(metrics);
+        setSuggestions(apiSuggestions);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [filters]);
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    setFilters((prev) => {
+      if (prev.city === newFilters.city && prev.month === newFilters.month) {
+        return prev;
+      }
+      return newFilters;
+    });
   };
 
   if (loading) {
