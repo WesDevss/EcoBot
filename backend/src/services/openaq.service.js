@@ -1,6 +1,4 @@
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
 const OPENAQ_BASE_URL = 'https://api.openaq.org/v3';
 
@@ -51,26 +49,14 @@ function pickBestLocation(locations, query, country) {
 }
 
 function getOpenAQApiKey() {
-  const envKey = process.env.OPENAQ_API_KEY;
-  if (envKey) return envKey;
-
-  try {
-    const envExamplePath = path.join(__dirname, '../../../.env.example');
-    const envExampleContent = fs.readFileSync(envExamplePath, 'utf-8');
-    const match = envExampleContent.match(/^OPENAQ_API_KEY=(.+)$/m);
-    if (match && match[1] && match[1] !== '') {
-      return match[1].trim();
-    }
-  } catch (error) {
-    console.warn('[OpenAQ Service] Não foi possível ler .env.example');
+  if (process.env.OPENAQ_API_KEY) {
+    return process.env.OPENAQ_API_KEY.trim();
   }
-
   return '';
 }
 
-const OPENAQ_API_KEY = getOpenAQApiKey();
-
 async function fetchAirQualityByLocation(location) {
+  const OPENAQ_API_KEY = getOpenAQApiKey();
   if (!OPENAQ_API_KEY) {
     console.warn('[OpenAQ Service] API key não definida - usando dados simulados');
     return getSimulatedData(location);
@@ -108,6 +94,7 @@ async function fetchAirQualityByLocation(location) {
 }
 
 async function fetchAirQualityByCity(city, country) {
+  const OPENAQ_API_KEY = getOpenAQApiKey();
   if (!OPENAQ_API_KEY) {
     console.warn('[OpenAQ Service] API key não definida - usando dados simulados');
     return getSimulatedData(city);
