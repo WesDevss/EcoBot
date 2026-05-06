@@ -79,7 +79,9 @@ export function AppProvider({ children }) {
           return;
         }
 
-        setUser(refreshedUser);
+        if (isMounted && refreshedUser.id !== user.id) {
+          setUser(refreshedUser);
+        }
 
         if (refreshedUser.preferences) {
           setTheme(refreshedUser.preferences.theme || 'light');

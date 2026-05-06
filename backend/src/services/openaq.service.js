@@ -38,7 +38,7 @@ function pickBestLocation(locations, query, country) {
       if (locality === normalizedQuery || name === normalizedQuery) score = 4;
       else if (locality.startsWith(normalizedQuery) || name.startsWith(normalizedQuery)) score = 3;
       else if (locality.includes(normalizedQuery) || name.includes(normalizedQuery)) score = 2;
-      else if (normalizedQuery.includes(locality) || normalizedQuery.includes(name)) score = 1;
+      else if ((locality.length >= 3 && normalizedQuery.includes(locality)) || (name.length >= 3 && normalizedQuery.includes(name))) score = 1;
 
       return { loc, score };
     })
@@ -148,12 +148,14 @@ function convertOpenAQToESG(openAQData, locationInfo) {
   };
 
   openAQData.forEach(data => {
-    if (data.value !== undefined) {
-      const sensorId = data.sensorsId;
-      if (sensorId === 2) measurements.pm25 = data.value;
-      else if (sensorId === 1) measurements.pm10 = data.value;
-      else measurements.pm25 = data.value;
-    }
+    if (data.value === undefined || data.value === null) return;
+    const param = (data.parameter || '').toLowerCase().replace('.', '');
+    if (param === 'pm25') measurements.pm25 = data.value;
+    else if (param === 'pm10') measurements.pm10 = data.value;
+    else if (param === 'no2') measurements.no2 = data.value;
+    else if (param === 'o3') measurements.o3 = data.value;
+    else if (param === 'co') measurements.co = data.value;
+    else if (param === 'so2') measurements.so2 = data.value;
   });
 
   measurements.aqi = Math.max(
@@ -165,18 +167,18 @@ function convertOpenAQToESG(openAQData, locationInfo) {
     measurements.so2 || 0
   ) || 50;
 
-  const co2Emissions = parseFloat((Math.random() * 1000 + 200).toFixed(2));
-  const energyConsumption = parseFloat((Math.random() * 5000 + 1000).toFixed(2));
-  const waterConsumption = parseFloat((Math.random() * 200 + 50).toFixed(2));
-  const wasteGenerated = parseFloat((Math.random() * 100 + 20).toFixed(2));
-  const renewableEnergy = parseFloat((Math.random() * 50 + 10).toFixed(2));
-  const recyclingRate = parseFloat((Math.random() * 40 + 20).toFixed(2));
+  const aqi = measurements.aqi;
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const co2Emissions = parseFloat(clamp((aqi * 14) + 180, 150, 1200).toFixed(1));
+  const energyConsumption = parseFloat(clamp((aqi * 42) + 1100, 900, 5200).toFixed(1));
+  const waterConsumption = parseFloat(clamp((aqi * 1.1) + 70, 50, 260).toFixed(1));
+  const wasteGenerated = parseFloat(clamp((aqi * 0.35) + 20, 15, 120).toFixed(1));
+  const renewableEnergy = parseFloat(clamp(60 - (aqi * 0.4), 8, 60).toFixed(1));
+  const recyclingRate = parseFloat(clamp(55 - (aqi * 0.28), 12, 55).toFixed(1));
 
-  const sustainabilityScore = parseFloat((
-    100 - (measurements.aqi / 2) +
-    (renewableEnergy * 0.5) +
-    (recyclingRate * 0.3) -
-    (co2Emissions / 100)
+  const sustainabilityScore = parseFloat(clamp(
+    100 - (aqi * 0.45) + (renewableEnergy * 0.35) + (recyclingRate * 0.25) - (co2Emissions * 0.015),
+    0, 100
   ).toFixed(1));
 
   return [

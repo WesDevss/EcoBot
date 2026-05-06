@@ -21,20 +21,27 @@ function Dashboard() {
 
     async function loadDashboardData() {
       setLoading(true);
-      const [data, metrics, apiSuggestions] = await Promise.all([
-        getDataForCityAndMonth(filters.city, filters.month),
-        getMetricsForCity(filters.city),
-        getSuggestions()
-      ]);
+      try {
+        const [data, metrics, apiSuggestions] = await Promise.all([
+          getDataForCityAndMonth(filters.city, filters.month),
+          getMetricsForCity(filters.city),
+          getSuggestions()
+        ]);
 
-      if (!isMounted) {
-        return;
+        if (!isMounted) {
+          return;
+        }
+
+        setAirData(data);
+        setMetricsData(metrics);
+        setSuggestions(apiSuggestions);
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-
-      setAirData(data);
-      setMetricsData(metrics);
-      setSuggestions(apiSuggestions);
-      setLoading(false);
     }
 
     loadDashboardData();
