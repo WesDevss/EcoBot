@@ -6,12 +6,35 @@ import './settings.css';
 function Settings() {
   const {
     theme,
-    toggleTheme,
     notifications,
-    setNotifications,
     language,
-    setLanguage,
+    saveSettings,
   } = useApp();
+
+  const handleThemeToggle = async () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    await saveSettings({
+      nextTheme,
+      nextNotifications: notifications,
+      nextLanguage: language
+    });
+  };
+
+  const handleNotificationsToggle = async () => {
+    await saveSettings({
+      nextTheme: theme,
+      nextNotifications: !notifications,
+      nextLanguage: language
+    });
+  };
+
+  const handleLanguageChange = async (nextLanguage) => {
+    await saveSettings({
+      nextTheme: theme,
+      nextNotifications: notifications,
+      nextLanguage
+    });
+  };
 
   const clearData = () => {
     if (confirm('Tem certeza que deseja limpar todos os dados locais?')) {
@@ -32,7 +55,7 @@ function Settings() {
             </div>
             <button
               className={`toggle-btn ${theme === 'dark' ? 'active' : ''}`}
-              onClick={toggleTheme}
+              onClick={handleThemeToggle}
             >
               <span className="toggle-slider"></span>
             </button>
@@ -48,7 +71,7 @@ function Settings() {
             </div>
             <button
               className={`toggle-btn ${notifications ? 'active' : ''}`}
-              onClick={() => setNotifications(!notifications)}
+              onClick={handleNotificationsToggle}
             >
               <span className="toggle-slider"></span>
             </button>
@@ -65,7 +88,7 @@ function Settings() {
             <select
               className="setting-select"
               value={language}
-              onChange={e => setLanguage(e.target.value)}
+              onChange={e => handleLanguageChange(e.target.value)}
             >
               <option value="pt-BR">Português (Brasil)</option>
               <option value="en-US">English (US)</option>

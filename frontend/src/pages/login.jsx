@@ -11,7 +11,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -20,14 +20,12 @@ function Login() {
       return;
     }
 
-    const authenticated = login({ email, password });
-
-    if (!authenticated) {
-      setError('As credenciais estão incorretas.');
-      return;
+    try {
+      await login({ email, password });
+      navigate('/dashboard');
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || 'As credenciais estão incorretas.');
     }
-
-    navigate('/dashboard');
   };
 
   return (

@@ -6,12 +6,13 @@ import AirQualityChart from '../components/charts/AirQualityChart';
 import SustainabilityScoreChart from '../components/charts/SustainabilityScoreChart';
 import ComparisonChart from '../components/charts/ComparisonChart';
 import { getDataForCityAndMonth, getMetricsForCity } from '../services/unifiedApi';
-import { suggestions } from '../data/suggestions.data';
+import { getSuggestions } from '../services/suggestionsApi';
 import './dashboard.css';
 
 function Dashboard() {
   const [airData, setAirData] = useState(null);
   const [metricsData, setMetricsData] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ city: 'São Paulo', month: 'Jun' });
 
@@ -20,9 +21,10 @@ function Dashboard() {
 
     async function loadDashboardData() {
       setLoading(true);
-      const [data, metrics] = await Promise.all([
+      const [data, metrics, apiSuggestions] = await Promise.all([
         getDataForCityAndMonth(filters.city, filters.month),
-        getMetricsForCity(filters.city)
+        getMetricsForCity(filters.city),
+        getSuggestions()
       ]);
 
       if (!isMounted) {
@@ -31,6 +33,7 @@ function Dashboard() {
 
       setAirData(data);
       setMetricsData(metrics);
+      setSuggestions(apiSuggestions);
       setLoading(false);
     }
 

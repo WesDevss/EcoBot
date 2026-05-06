@@ -1,18 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  loginRequest,
+  registerRequest,
+  getUserById,
+  updateUserProfile,
+  updateUserPreferences
+} from '../services/userApi';
 
 const AppContext = createContext();
-const ADMIN_EMAIL = 'admin@ecobot.com';
-const ADMIN_PASSWORD = 'admin123';
-const DEFAULT_USERS = [
-  {
-    name: 'Administrador EcoBot',
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
-    role: 'Administrador',
-    avatar: '/logo.png',
-    joinedDate: new Date().toLocaleDateString('pt-BR'),
-  },
-];
+const DEFAULT_USER = {
+  id: null,
+  name: 'Usuário EcoBot',
+  email: 'usuario@ecobot.com',
+  role: 'Usuário',
+  avatar: '/logo.png',
+  joinedDate: new Date().toLocaleDateString('pt-BR'),
+  preferences: {
+    theme: 'light',
+    notifications: true,
+    language: 'pt-BR'
+  }
+};
 
 export function AppProvider({ children }) {
   const [theme, setTheme] = useState(() => {
@@ -28,25 +36,12 @@ export function AppProvider({ children }) {
   });
 
   const [user, setUser] = useState(() => {
-    return JSON.parse(localStorage.getItem('ecobot-user')) || {
-      name: 'Usuário EcoBot',
-      email: 'usuario@ecobot.com',
-      role: 'Administrador',
-      avatar: '/logo.png',
-      joinedDate: new Date().toLocaleDateString('pt-BR'),
-    };
+    return JSON.parse(localStorage.getItem('ecobot-user')) || DEFAULT_USER;
   });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('ecobot-authenticated') === 'true';
   });
-  const [users, setUsers] = useState(() => {
-    const storedUsers = JSON.parse(localStorage.getItem('ecobot-users')) || [];
-    const hasAdmin = storedUsers.some(
-      (storedUser) => storedUser.email?.toLowerCase() === ADMIN_EMAIL
-    );
-
-    return hasAdmin ? storedUsers : [...DEFAULT_USERS, ...storedUsers];
-  });
+  const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('ecobot-theme', theme);
@@ -70,49 +65,103 @@ export function AppProvider({ children }) {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem('ecobot-users', JSON.stringify(users));
-  }, [users]);
-
-  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  const login = ({ email, password }) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const matchedUser = users.find(
-      (registeredUser) =>
-        registeredUser.email?.toLowerCase() === normalizedEmail &&
-        registeredUser.password === password
-    );
-
-    if (!matchedUser) return false;
-
-    setUser({
-      name: matchedUser.name,
-      email: matchedUser.email,
-      role: matchedUser.role || 'Usuário',
-      avatar: matchedUser.avatar || '/logo.png',
-      joinedDate: matchedUser.joinedDate || new Date().toLocaleDateString('pt-BR'),
-    });
-    setIsAuthenticated(true);
-    return true;
-  };
-  const logout = () => setIsAuthenticated(false);
-  const registerUser = ({ name, email, password }) => {
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (users.some((registeredUser) => registeredUser.email?.toLowerCase() === normalizedEmail)) {
-      return { success: false, message: 'Este email já está cadastrado.' };
+    if (!user?.id) {
+      return;
     }
 
-    const newUser = {
-      name: name.trim(),
-      email: normalizedEmail,
-      password,
-      role: 'Usuário',
-      avatar: '/logo.png',
-      joinedDate: new Date().toLocaleDateString('pt-BR'),
-    };
+    let isMounted = true;
 
-    setUsers((prevUsers) => [...prevUsers, newUser]);
-    return { success: true };
+    async function syncUserProfile() {
+      setLoadingUser(true);
+      try {
+        const refreshedUser = await getUserById(user.id);
+        if (!isMounted) {
+          return;
+        }
+
+        setUser(refreshedUser);
+
+        if (refreshedUser.preferences) {
+          setTheme(refreshedUser.preferences.theme || 'light');
+          setNotifications(
+            typeof refreshedUser.preferences.notifications === 'boolean'
+              ? refreshedUser.preferences.notifications
+              : true
+          );
+          setLanguage(refreshedUser.preferences.language || 'pt-BR');
+        }
+      } catch (error) {
+        console.error('Falha ao sincronizar perfil do usuário', error);
+      } finally {
+        if (isMounted) {
+          setLoadingUser(false);
+        }
+      }
+    }
+
+    if (isAuthenticated) {
+      syncUserProfile();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const login = async ({ email, password }) => {
+    const authenticatedUser = await loginRequest({ email, password });
+    setUser(authenticatedUser);
+    setTheme(authenticatedUser.preferences?.theme || 'light');
+    setNotifications(
+      typeof authenticatedUser.preferences?.notifications === 'boolean'
+        ? authenticatedUser.preferences.notifications
+        : true
+    );
+    setLanguage(authenticatedUser.preferences?.language || 'pt-BR');
+    setIsAuthenticated(true);
+    return authenticatedUser;
+  };
+  const logout = () => {
+    setIsAuthenticated(false);
+    setUser(DEFAULT_USER);
+    localStorage.removeItem('ecobot-user');
+    localStorage.removeItem('ecobot-authenticated');
+  };
+  const registerUser = async ({ name, email, password }) => {
+    const newUser = await registerRequest({ name, email, password });
+    return { success: true, user: newUser };
+  };
+
+  const saveProfile = async ({ name, email, role, avatar }) => {
+    if (!user?.id) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const updatedUser = await updateUserProfile(user.id, { name, email, role, avatar });
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const saveSettings = async ({ nextTheme, nextNotifications, nextLanguage }) => {
+    if (!user?.id) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const updatedUser = await updateUserPreferences(user.id, {
+      theme: nextTheme,
+      notifications: nextNotifications,
+      language: nextLanguage
+    });
+    setUser(updatedUser);
+    setTheme(updatedUser.preferences?.theme || 'light');
+    setNotifications(
+      typeof updatedUser.preferences?.notifications === 'boolean'
+        ? updatedUser.preferences.notifications
+        : true
+    );
+    setLanguage(updatedUser.preferences?.language || 'pt-BR');
+    return updatedUser;
   };
 
   return (
@@ -125,10 +174,13 @@ export function AppProvider({ children }) {
       setLanguage,
       user,
       setUser,
+      loadingUser,
       isAuthenticated,
       login,
       logout,
       registerUser,
+      saveProfile,
+      saveSettings,
     }}>
       {children}
     </AppContext.Provider>

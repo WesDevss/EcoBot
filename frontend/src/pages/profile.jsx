@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
@@ -6,13 +6,28 @@ import './profile.css';
 
 function Profile() {
   const navigate = useNavigate();
-  const { user, setUser, logout } = useApp();
+  const { user, saveProfile, logout } = useApp();
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState(user);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    setUser(formData);
-    setEditing(false);
+  useEffect(() => {
+    setFormData(user);
+  }, [user]);
+
+  const handleSave = async () => {
+    setError('');
+    try {
+      await saveProfile({
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        avatar: formData.avatar
+      });
+      setEditing(false);
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || 'Falha ao salvar perfil.');
+    }
   };
 
   const handleLogout = () => {
@@ -59,6 +74,7 @@ function Profile() {
         {editing && (
           <div className="profile-card profile-edit-form">
             <h3 className="card-title">Editar Perfil</h3>
+            {error && <p className="register-error">{error}</p>}
             <div className="form-group">
               <label className="form-label">Nome</label>
               <input

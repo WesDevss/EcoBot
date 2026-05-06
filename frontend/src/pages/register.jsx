@@ -13,7 +13,7 @@ function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -28,15 +28,19 @@ function Register() {
       return;
     }
 
-    const registerResult = registerUser({ name, email, password });
+    try {
+      const registerResult = await registerUser({ name, email, password });
 
-    if (!registerResult.success) {
-      setError(registerResult.message);
-      return;
+      if (!registerResult.success) {
+        setError(registerResult.message || 'Falha ao registrar usuário.');
+        return;
+      }
+
+      setSuccess('Cadastro realizado com sucesso! Redirecionando para login...');
+      setTimeout(() => navigate('/login'), 1200);
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || 'Falha ao registrar usuário.');
     }
-
-    setSuccess('Cadastro realizado com sucesso! Redirecionando para login...');
-    setTimeout(() => navigate('/login'), 1200);
   };
 
   return (

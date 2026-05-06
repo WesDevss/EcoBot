@@ -1,55 +1,28 @@
-import axios from 'axios';
-import {
-  getCities as getLocalCities,
-  getDataForCityAndMonth as getLocalDataForCityAndMonth,
-  getMetricsForCity as getLocalMetricsForCity,
-  monthOrder
-} from '../data/unified.data';
-
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000
-});
+import apiClient from './apiClient';
 
 async function getCities() {
-  try {
-    const response = await api.get('/unified/cities');
-    return response.data;
-  } catch (error) {
-    return getLocalCities();
-  }
+  const response = await apiClient.get('/unified/cities');
+  return response.data;
 }
 
 async function getMonths() {
-  try {
-    const response = await api.get('/unified/months');
-    return response.data;
-  } catch (error) {
-    return monthOrder;
-  }
+  const response = await apiClient.get('/unified/months');
+  return response.data;
 }
 
 async function getDataForCityAndMonth(city, month) {
-  try {
-    const params = { city };
-    if (month) {
-      params.month = month;
-    }
-
-    const response = await api.get('/unified/data', { params });
-    return response.data;
-  } catch (error) {
-    return getLocalDataForCityAndMonth(city, month);
+  const params = { city };
+  if (month) {
+    params.month = month;
   }
+
+  const response = await apiClient.get('/unified/data', { params });
+  return response.data;
 }
 
 async function getMetricsForCity(city) {
-  try {
-    const response = await api.get('/unified/metrics', { params: { city } });
-    return response.data;
-  } catch (error) {
-    return getLocalMetricsForCity(city);
-  }
+  const response = await apiClient.get('/unified/metrics', { params: { city } });
+  return response.data;
 }
 
 export {
