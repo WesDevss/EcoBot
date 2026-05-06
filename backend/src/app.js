@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const routes = require('./routes');
 const userRoutes = require('./routes/userRoutes');
 const { corsOrigin } = require('./config/env');
@@ -11,6 +13,15 @@ app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api', routes);
+
+const distPath = path.resolve(__dirname, '..', '..', 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.use(errorHandler);
 
 module.exports = app;
