@@ -28,15 +28,6 @@ function Login() {
     }
   };
 
-  const handleDevLogin = async () => {
-    try {
-      await login({ email: 'dev@ecobot.com', password: 'dev123' });
-      navigate('/dashboard');
-    } catch (requestError) {
-      setError('Erro ao entrar em modo desenvolvimento.');
-    }
-  };
-
   return (
     <div className="login-container">
       <div className="login-box">
@@ -115,10 +106,6 @@ function Login() {
 
           {error && <p className="login-error">{error}</p>}
         </form>
-
-        <button type="button" className="dev-login-btn" onClick={handleDevLogin}>
-          🚀 Modo Desenvolvimento
-        </button>
 
         <div className="login-footer">
           Não tem conta?{' '}
