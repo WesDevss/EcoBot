@@ -42,6 +42,15 @@ function Layout({ title, children }) {
   const location = useLocation();
   const { theme, user } = useApp();
 
+  const displayName = user?.name || 'Usuário';
+  const displayRole = user?.role && user.role !== 'Usuário' ? user.role : 'Equipe ESG';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'U';
+
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/qualidade-do-ar', label: 'Qualidade do Ar' },
@@ -71,15 +80,16 @@ function Layout({ title, children }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div className="sidebar-user">
+          <Link to="/perfil" className="sidebar-user sidebar-user-link">
             <div className="sidebar-user-avatar">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              {initials}
             </div>
             <div className="sidebar-user-info">
-              <span className="sidebar-user-name">{user?.name || 'Usuário'}</span>
-              <span className="sidebar-user-role">{user?.role || 'Usuário'}</span>
+              <span className="sidebar-user-name">{displayName}</span>
+              <span className="sidebar-user-role">{displayRole}</span>
             </div>
-          </div>
+            <span className="sidebar-user-tag">TI Verde</span>
+          </Link>
         </div>
       </aside>
 
