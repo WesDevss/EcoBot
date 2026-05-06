@@ -4,6 +4,52 @@ const path = require('path');
 
 const OPENAQ_BASE_URL = 'https://api.openaq.org/v3';
 
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function getCountryCode(location) {
+  if (!location?.country) return '';
+  if (typeof location.country === 'string') return location.country;
+  return location.country.code || '';
+}
+
+function pickBestLocation(locations, query, country) {
+  const normalizedQuery = normalizeText(query);
+  const normalizedCountry = normalizeText(country);
+
+  const candidates = locations.filter((loc) => {
+    if (!normalizedCountry) {
+      return true;
+    }
+    return normalizeText(getCountryCode(loc)) === normalizedCountry;
+  });
+
+  const scopedLocations = candidates.length > 0 ? candidates : locations;
+
+  const ranked = scopedLocations
+    .map((loc) => {
+      const name = normalizeText(loc.name);
+      const locality = normalizeText(loc.locality);
+
+      let score = -1;
+      if (locality === normalizedQuery || name === normalizedQuery) score = 4;
+      else if (locality.startsWith(normalizedQuery) || name.startsWith(normalizedQuery)) score = 3;
+      else if (locality.includes(normalizedQuery) || name.includes(normalizedQuery)) score = 2;
+      else if (normalizedQuery.includes(locality) || normalizedQuery.includes(name)) score = 1;
+
+      return { loc, score };
+    })
+    .filter((item) => item.score >= 0)
+    .sort((a, b) => b.score - a.score);
+
+  return ranked.length ? ranked[0].loc : null;
+}
+
 function getOpenAQApiKey() {
   const envKey = process.env.OPENAQ_API_KEY;
   if (envKey) return envKey;
@@ -36,15 +82,12 @@ async function fetchAirQualityByLocation(location) {
     const locationsResponse = await axios.get(`${OPENAQ_BASE_URL}/locations`, {
       headers,
       params: {
-        limit: 100
+        limit: 1000
       }
     });
 
     const locations = locationsResponse.data.results || [];
-    const matchedLocation = locations.find(loc => 
-      loc.name.toLowerCase().includes(location.toLowerCase()) ||
-      loc.locality?.toLowerCase().includes(location.toLowerCase())
-    );
+    const matchedLocation = pickBestLocation(locations, location);
 
     if (!matchedLocation) {
       console.warn(`[OpenAQ Service] Localização "${location}" não encontrada - usando dados simulados`);
@@ -76,15 +119,13 @@ async function fetchAirQualityByCity(city, country) {
     const locationsResponse = await axios.get(`${OPENAQ_BASE_URL}/locations`, {
       headers,
       params: {
-        limit: 100
+        limit: 1000,
+        country: country || undefined
       }
     });
 
     const locations = locationsResponse.data.results || [];
-    const matchedLocation = locations.find(loc => 
-      loc.name.toLowerCase().includes(city.toLowerCase()) ||
-      loc.locality?.toLowerCase().includes(city.toLowerCase())
-    );
+    const matchedLocation = pickBestLocation(locations, city, country);
 
     if (!matchedLocation) {
       console.warn(`[OpenAQ Service] Cidade "${city}" não encontrada - usando dados simulados`);
