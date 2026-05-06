@@ -21,7 +21,7 @@ function SustainabilityScoreChart({ score = 0 }) {
   const isDark = theme === 'dark';
   const normalizedScore = Math.min(100, Math.max(0, score));
   const cx = 140;
-  const cy = 130;
+  const cy = 115;
   const radius = 100;
   const stroke = 18;
 
@@ -49,7 +49,7 @@ function SustainabilityScoreChart({ score = 0 }) {
 
   return (
     <div style={{ width: '100%', maxWidth: 320, margin: '0 auto' }}>
-      <svg viewBox="0 0 280 175" style={{ width: '100%', height: 'auto', display: 'block' }}>
+      <svg viewBox="0 0 280 160" style={{ width: '100%', height: 'auto', display: 'block' }}>
         {/* Fundo cinza */}
         <path
           d={describeArc(cx, cy, radius, 180, 360)}
@@ -123,7 +123,7 @@ function SustainabilityScoreChart({ score = 0 }) {
       </svg>
 
       {/* Texto central abaixo do SVG */}
-      <div style={{ textAlign: 'center', marginTop: -4 }}>
+      <div style={{ textAlign: 'center', marginTop: 2 }}>
         <div
           style={{
             fontSize: '40px',
