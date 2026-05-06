@@ -73,23 +73,6 @@ function Layout({ title, children }) {
             </Link>
           ))}
         </nav>
-        <div className="sidebar-footer">
-          <Link to="/configuracoes" className="sidebar-user sidebar-user-link">
-            <div className="sidebar-user-main">
-              <div className="sidebar-user-avatar">
-                {initials}
-              </div>
-              <div className="sidebar-user-info">
-                <span className="sidebar-user-name">{displayName}</span>
-                <span className="sidebar-user-role">{displayRole}</span>
-              </div>
-            </div>
-            <div className="sidebar-user-meta">
-              <span className="sidebar-user-tag">TI Verde</span>
-              <span className="sidebar-user-action">Perfil & Configurações</span>
-            </div>
-          </Link>
-        </div>
       </aside>
 
       <div className="main-content">
