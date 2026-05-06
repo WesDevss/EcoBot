@@ -123,12 +123,20 @@ body {
 
 .sidebar-user {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
   border-radius: 12px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.sidebar-user-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .sidebar-user-link {
@@ -161,25 +169,33 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .sidebar-user-name {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: rgba(255,255,255,0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 100%;
 }
 
 .sidebar-user-role {
-  font-size: 11px;
+  font-size: 10.5px;
   color: rgba(255,255,255,0.62);
 }
 
+.sidebar-user-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
 .sidebar-user-tag {
-  margin-left: auto;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -188,8 +204,19 @@ body {
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(134, 239, 172, 0.25);
   border-radius: 999px;
-  padding: 3px 8px;
+  padding: 2px 8px;
   white-space: nowrap;
+}
+
+.sidebar-user-action {
+  font-size: 10px;
+  color: rgba(203, 213, 225, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Main content ── */
@@ -307,6 +334,10 @@ body {
 
   .sidebar-user-tag {
     display: none;
+  }
+
+  .sidebar-user-action {
+    font-size: 9.5px;
   }
 }
 
