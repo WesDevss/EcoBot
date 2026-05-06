@@ -32,7 +32,7 @@ function FilterBar({ onFilterChange, defaultCity = 'São Paulo', defaultMonth = 
     if (onFilterChange) {
       onFilterChange({ city: selectedCity, month: showMonthFilter ? selectedMonth : null });
     }
-  }, [selectedCity, selectedMonth, onFilterChange, showMonthFilter]);
+  }, [selectedCity, selectedMonth, showMonthFilter]);
 
   return (
     <div className="filter-bar">

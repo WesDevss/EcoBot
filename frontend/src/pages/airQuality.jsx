@@ -34,7 +34,12 @@ function AirQuality() {
   }, [filters]);
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    setFilters((prev) => {
+      if (prev.city === newFilters.city && prev.month === newFilters.month) {
+        return prev;
+      }
+      return newFilters;
+    });
   };
 
   if (loading) {

@@ -44,7 +44,12 @@ function History() {
   }, [filters]);
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    setFilters((prev) => {
+      if (prev.city === newFilters.city) {
+        return prev;
+      }
+      return { city: newFilters.city };
+    });
   };
 
   if (loading) {
