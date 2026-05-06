@@ -25,11 +25,6 @@ const icons = {
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
     </svg>
   ),
-  '/perfil': (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-    </svg>
-  ),
   '/configuracoes': (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3"/>
@@ -56,8 +51,7 @@ function Layout({ title, children }) {
     { path: '/qualidade-do-ar', label: 'Qualidade do Ar' },
     { path: '/chatbot', label: 'Chatbot ESG' },
     { path: '/historico', label: 'Histórico ESG' },
-    { path: '/perfil', label: 'Perfil' },
-    { path: '/configuracoes', label: 'Configurações' },
+    { path: '/configuracoes', label: 'Perfil & Configurações' },
   ];
 
   return (
@@ -80,7 +74,7 @@ function Layout({ title, children }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <Link to="/perfil" className="sidebar-user sidebar-user-link">
+          <Link to="/configuracoes" className="sidebar-user sidebar-user-link">
             <div className="sidebar-user-avatar">
               {initials}
             </div>

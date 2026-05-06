@@ -1,15 +1,54 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import './settings.css';
 
 function Settings() {
+  const navigate = useNavigate();
   const {
     theme,
     notifications,
     language,
+    user,
+    saveProfile,
     saveSettings,
+    logout,
   } = useApp();
+
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    role: user?.role || '',
+    avatar: user?.avatar || '/logo.png'
+  });
+  const [profileMessage, setProfileMessage] = useState('');
+  const [profileError, setProfileError] = useState('');
+
+  useEffect(() => {
+    setProfileData({
+      name: user?.name || '',
+      email: user?.email || '',
+      role: user?.role || '',
+      avatar: user?.avatar || '/logo.png'
+    });
+  }, [user]);
+
+  const handleProfileSave = async () => {
+    setProfileMessage('');
+    setProfileError('');
+    try {
+      await saveProfile(profileData);
+      setProfileMessage('Perfil atualizado com sucesso.');
+    } catch (error) {
+      setProfileError(error?.response?.data?.message || 'Falha ao salvar perfil.');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   const handleThemeToggle = async () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -46,6 +85,51 @@ function Settings() {
   return (
     <Layout title="Configurações">
       <div className="settings-container">
+        <div className="settings-card profile-settings-card">
+          <h3 className="card-title">Perfil da Conta</h3>
+
+          <div className="profile-grid">
+            <div className="form-group">
+              <label className="form-label">Nome</label>
+              <input
+                className="form-input"
+                value={profileData.name}
+                onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                className="form-input"
+                value={profileData.email}
+                onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Função</label>
+              <input
+                className="form-input"
+                value={profileData.role}
+                onChange={(e) => setProfileData(prev => ({ ...prev, role: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {profileMessage && <p className="profile-feedback success">{profileMessage}</p>}
+          {profileError && <p className="profile-feedback error">{profileError}</p>}
+
+          <div className="profile-actions-row">
+            <button className="profile-save-btn" onClick={handleProfileSave}>
+              Salvar Perfil
+            </button>
+            <button className="profile-logout-btn" onClick={handleLogout}>
+              Sair da Conta
+            </button>
+          </div>
+        </div>
+
         <div className="settings-card">
           <h3 className="card-title">Aparência</h3>
           <div className="setting-item">
