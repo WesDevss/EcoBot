@@ -5,7 +5,7 @@ import ESGMetricsChart from '../components/charts/ESGMetricsChart';
 import AirQualityChart from '../components/charts/AirQualityChart';
 import SustainabilityScoreChart from '../components/charts/SustainabilityScoreChart';
 import ComparisonChart from '../components/charts/ComparisonChart';
-import { getDataForCityAndMonth, getMetricsForCity } from '../data/unified.data';
+import { getDataForCityAndMonth, getMetricsForCity } from '../services/unifiedApi';
 import { suggestions } from '../data/suggestions.data';
 import './dashboard.css';
 
@@ -16,12 +16,29 @@ function Dashboard() {
   const [filters, setFilters] = useState({ city: 'São Paulo', month: 'Jun' });
 
   useEffect(() => {
-    setLoading(true);
-    const data = getDataForCityAndMonth(filters.city, filters.month);
-    const metrics = getMetricsForCity(filters.city);
-    setAirData(data);
-    setMetricsData(metrics);
-    setLoading(false);
+    let isMounted = true;
+
+    async function loadDashboardData() {
+      setLoading(true);
+      const [data, metrics] = await Promise.all([
+        getDataForCityAndMonth(filters.city, filters.month),
+        getMetricsForCity(filters.city)
+      ]);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setAirData(data);
+      setMetricsData(metrics);
+      setLoading(false);
+    }
+
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [filters]);
 
   const handleFilterChange = (newFilters) => {

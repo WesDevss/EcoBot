@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import FilterBar from '../components/FilterBar';
 import AirQualityChart from '../components/charts/AirQualityChart';
 import PollutantBarsChart from '../components/charts/PollutantBarsChart';
-import { getDataForCityAndMonth } from '../data/unified.data';
+import { getDataForCityAndMonth } from '../services/unifiedApi';
 import './airQuality.css';
 
 function AirQuality() {
@@ -12,10 +12,25 @@ function AirQuality() {
   const [filters, setFilters] = useState({ city: 'São Paulo', month: 'Jun' });
 
   useEffect(() => {
-    setLoading(true);
-    const result = getDataForCityAndMonth(filters.city, filters.month);
-    setData(result);
-    setLoading(false);
+    let isMounted = true;
+
+    async function loadAirQualityData() {
+      setLoading(true);
+      const result = await getDataForCityAndMonth(filters.city, filters.month);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setData(result);
+      setLoading(false);
+    }
+
+    loadAirQualityData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [filters]);
 
   const handleFilterChange = (newFilters) => {
