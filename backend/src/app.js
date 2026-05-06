@@ -9,8 +9,15 @@ const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 
+app.set('etag', false);
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 app.use('/api/users', userRoutes);
 app.use('/api', routes);
 
