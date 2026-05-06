@@ -32,11 +32,9 @@ function Login() {
     <div className="login-container">
       <div className="login-box">
         <div className="login-header">
-          <img
-            src="/logo.png"
-            alt="EcoBot Logo"
-            className="login-logo"
-          />
+          <img src="/logo.png" alt="EcoBot Logo" className="login-logo" />
+          <h2>Bem-vindo ao EcoBot</h2>
+          <p>Monitore métricas ESG em tempo real</p>
         </div>
 
         <form onSubmit={handleSubmit}>
